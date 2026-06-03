@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>闪念便签 - 语音灵感记录助手</title>
+    <style>
+        :root {
+            --bg-color: #f5f7fb;
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        /* 录音控制面板 */
+        .input-panel {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            box-sizing: border-box;
+            font-size: 16px;
+            resize: none;
+            margin-bottom: 12px;
+        }
+
+        textarea:focus {
+            outline: 2px solid var(--primary-color);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-record {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .btn-record.recording {
+            animation: pulse 1.5s infinite;
+            background-color: #b91c1c;
+        }
+
+        .btn-save {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-save:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* 便签列表展示 */
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .note-card {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .note-time {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .note-content {
+            font-size: 15px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .btn-delete {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #d1d5db;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .btn-delete:hover {
+            color: #ef4444;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.98); opacity: 0.8; }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>💡 闪念便签</h1>
+    
+    <div class="input-panel">
+        <textarea id="noteInput" placeholder="点击下方录音开始说话，或者直接在这里输入你的想法..."></textarea>
+        <div class="button-group">
+            <button id="recordBtn" class="btn-record">🎤 开始语音输入</button>
+            <button id="saveBtn" class="btn-save">💾 保存为便签</button>
+        </div>
+    </div>
+
+    <div id="notesList" class="notes-list"></div>
+</div>
+
+<script>
+    // 1. 初始化语音识别
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isRecording = false;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true; // 连续识别
+        recognition.interimResults = true; // 实时显示过程结果
+        recognition.lang = 'zh-CN'; // 设置为中文
+
+        recognition.onresult = (event) => {
+            let resultText = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                resultText += event.results[i][0].transcript;
+            }
+            document.getElementById('noteInput').value = resultText;
+        };
+
+        recognition.onerror = (event) => {
+            console.error('语音识别错误:', event.error);
+            alert('语音识别出了一点小问题，请确保允许了麦克风权限。');
+            stopRecording();
+        };
+
+        recognition.onend = () => {
+            if (isRecording) stopRecording();
+        };
+    } else {
+        document.getElementById('recordBtn').style.display = 'none';
+        document.getElementById('noteInput').placeholder = "当前浏览器不支持语音功能，请使用 Chrome 浏览器。";
+    }
+
+    // 2. 录音按钮控制逻辑
+    const recordBtn = document.getElementById('recordBtn');
+    recordBtn.addEventListener('click', () => {
+        if (!isRecording) {
+            startRecording();
+        } else {
+            stopRecording();
+        }
+    });
+
+    function startRecording() {
+        isRecording = true;
+        recordBtn.textContent = '🛑 正在录音，点击停止...';
+        recordBtn.classList.add('recording');
+        recognition.start();
+    }
+
+    function stopRecording() {
+        isRecording = false;
+        recordBtn.textContent = '🎤 开始语音输入';
+        recordBtn.classList.add('recording');
+        recordBtn.classList.remove('recording');
+        recognition.stop();
+    }
+
+    // 3. 便签保存与读取逻辑 (LocalStorage)
+    const saveBtn = document.getElementById('saveBtn');
+    const noteInput = document.getElementById('noteInput');
+    const notesList = document.getElementById('notesList');
+
+    // 页面加载时读取历史便签
+    let notes = JSON.parse(localStorage.getItem('spark_notes')) || [];
+    renderNotes();
+
+    saveBtn.addEventListener('click', () => {
+        const text = noteInput.value.trim();
+        if (!text) {
+            alert('写点或者说点什么再保存吧！');
+            return;
+        }
+
+        const newNote = {
+            id: Date.now(),
+            content: text,
+            time: new Date().toLocaleString()
+        };
+
+        notes.unshift(newNote); // 新便签排在最前面
+        localStorage.setItem('spark_notes', JSON.stringify(notes));
+        
+        noteInput.value = ''; // 清空输入框
+        if(isRecording) stopRecording();
+        renderNotes();
+    });
+
+    function renderNotes() {
+        notesList.innerHTML = '';
+        notes.forEach(note => {
+            const card = document.createElement('div');
+            card.className = 'note-card';
+            card.innerHTML = `
+                <div class="note-time">${note.time}</div>
+                <div class="note-content">${note.content}</div>
+                <button class="btn-delete" onclick="deleteNote(${note.id})">×</button>
+            `;
+            notesList.appendChild(card);
+        });
+    }
+
+    // 删除便签
+    window.deleteNote = function(id) {
+        notes = notes.filter(note => note.id !== id);
+        localStorage.setItem('spark_notes', JSON.stringify(notes));
+        renderNotes();
+    }
+</script>
+
+</body>
+</html>
