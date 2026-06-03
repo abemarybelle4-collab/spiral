@@ -1,1 +1,668 @@
-<h1>测试：如果看到这句话，说明网页彻底好了！</h1>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>闪念空间 4.0 - 旗舰多维笔记</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --primary-color: #4f46e5;
+            --primary-light: #e0e7ff;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .main-trigger-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .input-panel {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .media-container {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background-color: #fafafa;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        /* 升级为可编辑的富文本区域 */
+        .editor-area {
+            width: 100%;
+            min-height: 120px;
+            max-height: 250px;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            box-sizing: border-box;
+            outline: none;
+            overflow-y: auto;
+            word-break: break-all;
+        }
+
+        .editor-area[placeholder]:empty:before {
+            content: attr(placeholder);
+            color: #9ca3af;
+            cursor: text;
+        }
+
+        .image-preview-slot {
+            display: none;
+            margin-top: 12px;
+            position: relative;
+        }
+
+        .image-preview-slot img {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .remove-img-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        /* 文字格式 & 表情工具栏 */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            background: #f3f4f6;
+            padding: 6px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .tool-btn {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .emoji-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            overflow-x: auto;
+            padding: 4px 0;
+        }
+
+        .emoji-btn {
+            font-size: 18px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px;
+        }
+
+        /* 附加标记（时间和地点） */
+        .meta-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .meta-inputs input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        /* 基础输入工具栏 */
+        .input-methods-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .method-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 13px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .method-btn.active-record {
+            background-color: #ef4444;
+            color: white;
+            border-color: #ef4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        .tag-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .tag-option {
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            white-space: nowrap;
+        }
+
+        .tag-option.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .btn-submit-save {
+            width: 100%;
+            background-color: #10b981;
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* 检索流 */
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-sizing: border-box;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab.active {
+            color: var(--primary-color);
+            font-weight: bold;
+            border-bottom-color: var(--primary-color);
+        }
+
+        /* 便签卡片样式 */
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .note-card {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.01);
+            position: relative;
+            border-top: 4px solid var(--primary-color);
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .note-time {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .note-meta-line {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .note-tag {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .note-content {
+            font-size: 15px;
+            line-height: 1.6;
+            word-break: break-all;
+        }
+
+        .note-img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .card-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 10px;
+            border-top: 1px solid #f3f4f6;
+            padding-top: 8px;
+        }
+
+        .action-icon {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.98); opacity: 0.8; }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>💡 闪念空间 4.0</h1>
+    
+    <button id="mainTriggerBtn" class="main-trigger-btn">➕ 记录新想法</button>
+    
+    <div id="inputPanel" class="input-panel">
+        <div class="toolbar">
+            <button class="tool-btn" data-cmd="bold">B</button>
+            <button class="tool-btn" data-cmd="italic" style="font-style: italic;">I</button>
+            <button class="tool-btn" data-cmd="underline" style="text-decoration: underline;">U</button>
+            <button class="tool-btn" data-cmd="strikeThrough" style="text-decoration: line-through;">S</button>
+        </div>
+
+        <div class="emoji-bar" id="emojiBar">
+            <button class="emoji-btn">📖</button>
+            <button class="emoji-btn">💡</button>
+            <button class="emoji-btn">🤝</button>
+            <button class="emoji-btn">📸</button>
+            <button class="emoji-btn">🔥</button>
+            <button class="emoji-btn">✨</button>
+            <button class="emoji-btn">🎉</button>
+            <button class="emoji-btn">🎯</button>
+            <button class="emoji-btn">❤️</button>
+        </div>
+
+        <div class="media-container">
+            <div id="noteInput" class="editor-area" contenteditable="true" placeholder="在这里写下你的想法，或者配合下方语音/格式工具排版..."></div>
+            <div id="imagePreviewSlot" class="image-preview-slot">
+                <img id="previewImg" src="" alt="预览图">
+                <button class="remove-img-btn" id="removeImgBtn">×</button>
+            </div>
+        </div>
+        
+        <div class="meta-inputs">
+            <input type="datetime-local" id="metaTime" title="可选时间">
+            <input type="text" id="metaLocation" placeholder="📍 标记地点（可选填）">
+        </div>
+
+        <div class="input-methods-bar">
+            <button id="recordBtn" class="method-btn">🎤 语音输入识别</button>
+            <button id="photoBtn" class="method-btn">🖼️ 上传图片/拍照</button>
+            <input type="file" id="hiddenFileInput" accept="image/*" style="display: none;">
+        </div>
+
+        <div class="tag-selector" id="tagSelector">
+            <span class="tag-option active" data-tag="📚 读书笔记">📚 读书笔记</span>
+            <span class="tag-option" data-tag="💡 即时灵感">💡 即时灵感</span>
+            <span class="tag-option" data-tag="📸 照片收集">📸 照片收集</span>
+            <span class="tag-option" data-tag="🤝 交谈心得">🤝 交谈心得</span>
+        </div>
+
+        <button id="saveBtn" class="btn-submit-save">确定存入库中</button>
+    </div>
+
+    <div style="margin-bottom: 16px;">
+        <input type="text" id="searchBox" class="search-box" placeholder="🔍 检索你的多维记忆库...">
+        <div class="category-tabs" id="categoryTabs">
+            <div class="tab active" data-filter="全部">全部内容</div>
+            <div class="tab" data-filter="📚 读书笔记">读书笔记</div>
+            <div class="tab" data-filter="💡 即时灵感">即时灵感</div>
+            <div class="tab" data-filter="📸 照片收集">照片收集</div>
+            <div class="tab" data-filter="🤝 交谈心得">交谈心得</div>
+        </div>
+    </div>
+
+    <div id="notesList" class="notes-list"></div>
+</div>
+
+<script>
+    // --- 1. 面板控制 ---
+    const mainTriggerBtn = document.getElementById('mainTriggerBtn');
+    const inputPanel = document.getElementById('inputPanel');
+    const metaTime = document.getElementById('metaTime');
+
+    mainTriggerBtn.addEventListener('click', () => {
+        if (inputPanel.style.display === 'block') {
+            inputPanel.style.display = 'none';
+            mainTriggerBtn.textContent = '➕ 记录新想法';
+        } else {
+            inputPanel.style.display = 'block';
+            mainTriggerBtn.textContent = '❌ 关闭输入面板';
+            // 自动初始化当前本地时间
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            metaTime.value = now.toISOString().slice(0, 16);
+        }
+    });
+
+    // --- 2. 富文本格式与表情控制 ---
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const cmd = btn.getAttribute('data-cmd');
+            document.execCommand(cmd, false, null);
+            document.getElementById('noteInput').focus();
+        });
+    });
+
+    document.querySelectorAll('.emoji-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const emoji = btn.textContent;
+            document.getElementById('noteInput').focus();
+            document.execCommand('insertText', false, emoji);
+        });
+    });
+
+    // --- 3. 语音识别逻辑 ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isRecording = false;
+    const recordBtn = document.getElementById('recordBtn');
+    const noteInput = document.getElementById('noteInput');
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'zh-CN';
+
+        recognition.onresult = (event) => {
+            let resultText = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                resultText += event.results[i][0].transcript;
+            }
+            // 语音识别追加到富文本框中
+            if(resultText.trim()) {
+                noteInput.innerHTML = resultText;
+            }
+        };
+        recognition.onerror = () => stopRecording();
+        recognition.onend = () => { if (isRecording) stopRecording(); };
+    }
+
+    recordBtn.addEventListener('click', () => {
+        if (!isRecording) {
+            isRecording = true;
+            recordBtn.textContent = '🛑 正在录音...';
+            recordBtn.classList.add('active-record');
+            if(recognition) recognition.start();
+        } else {
+            stopRecording();
+        }
+    });
+
+    function stopRecording() {
+        isRecording = false;
+        recordBtn.textContent = '🎤 语音输入识别';
+        recordBtn.classList.remove('active-record');
+        if(recognition) recognition.stop();
+    }
+
+    // --- 4. 图片逻辑 ---
+    const photoBtn = document.getElementById('photoBtn');
+    const hiddenFileInput = document.getElementById('hiddenFileInput');
+    const imagePreviewSlot = document.getElementById('imagePreviewSlot');
+    const previewImg = document.getElementById('previewImg');
+    let currentImageData = "";
+
+    photoBtn.addEventListener('click', () => hiddenFileInput.click());
+    hiddenFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                currentImageData = event.target.result;
+                previewImg.src = currentImageData;
+                imagePreviewSlot.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    document.getElementById('removeImgBtn').addEventListener('click', () => {
+        currentImageData = "";
+        imagePreviewSlot.style.display = 'none';
+        hiddenFileInput.value = "";
+    });
+
+    // --- 5. 数据存储与渲染 ---
+    let selectedTag = '📚 读书笔记';
+    const tagOptions = document.querySelectorAll('.tag-option');
+    tagOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            tagOptions.forEach(opt => opt.classList.remove('active'));
+            option.classList.add('active');
+            selectedTag = option.getAttribute('data-tag');
+        });
+    });
+
+    let notes = JSON.parse(localStorage.getItem('spark_space_v4')) || [];
+    let currentFilter = '全部';
+    let searchQuery = '';
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+        const htmlContent = noteInput.innerHTML.trim();
+        // 如果是空白占位，清空处理
+        const hasText = noteInput.textContent.trim().length > 0;
+        
+        if (!hasText && !currentImageData) return alert('记录点什么再存入库中吧~');
+
+        // 处理时间格式化显示
+        let finalTime = new Date().toLocaleString('zh-CN', { hour12: false });
+        if(metaTime.value) {
+            finalTime = new Date(metaTime.value).toLocaleString('zh-CN', { hour12: false });
+        }
+
+        const newNote = {
+            id: Date.now(),
+            content: htmlContent, // 保存富文本 HTML
+            image: currentImageData,
+            tag: selectedTag,
+            time: finalTime,
+            location: document.getElementById('metaLocation').value.trim()
+        };
+
+        notes.unshift(newNote);
+        localStorage.setItem('spark_space_v4', JSON.stringify(notes));
+        
+        // 重置
+        noteInput.innerHTML = '';
+        currentImageData = "";
+        imagePreviewSlot.style.display = 'none';
+        document.getElementById('metaLocation').value = '';
+        if(isRecording) stopRecording();
+        
+        inputPanel.style.display = 'none';
+        mainTriggerBtn.textContent = '➕ 记录新想法';
+
+        renderNotes();
+    });
+
+    document.getElementById('searchBox').addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase();
+        renderNotes();
+    });
+
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentFilter = tab.getAttribute('data-filter');
+            renderNotes();
+        });
+    });
+
+    function renderNotes() {
+        const notesList = document.getElementById('notesList');
+        notesList.innerHTML = '';
+
+        const filtered = notes.filter(note => {
+            const matchesTab = (currentFilter === '全部') || note.tag.includes(currentFilter.slice(2));
+            // 简单的富文本标签剥离搜索
+            const plainText = note.content.replace(/<[^>]*>/g, '').toLowerCase();
+            const matchesSearch = plainText.includes(searchQuery);
+            return matchesTab && matchesSearch;
+        });
+
+        const colors = { '读书': '#4f46e5', '即时': '#f59e0b', '照片': '#10b981', '交谈': '#ec4899' };
+        const bgColors = { '读书': '#e0e7ff', '即时': '#fef3c7', '照片': '#d1fae5', '交谈': '#fce7f3' };
+
+        filtered.forEach(note => {
+            const card = document.createElement('div');
+            card.className = 'note-card';
+            const key = note.tag.slice(2, 4);
+            card.style.borderTopColor = colors[key] || '#4f46e5';
+
+            let locHtml = note.location ? `<span>📍 ${note.location}</span>` : '';
+            let imgHtml = note.image ? `<img src="${note.image}" class="note-img">` : '';
+
+            card.innerHTML = `
+                <div class="note-header">
+                    <span class="note-time">${note.time}</span>
+                    <span class="note-tag" style="background:${bgColors[key]}; color:${colors[key]}">${note.tag}</span>
+                </div>
+                <div class="note-meta-line">
+                    ${locHtml}
+                </div>
+                <div class="note-content">${note.content}</div>
+                ${imgHtml}
+                <div class="card-actions">
+                    <button class="action-icon" onclick="copyCardText(this)">📋 复制文本</button>
+                    <button class="action-icon" onclick="deleteNote(${note.id})" style="color:#ef4444;">🗑️ 删除</button>
+                </div>
+            `;
+            notesList.appendChild(card);
+        });
+    }
+
+    // 智能复制：只复制纯文字，不复制 HTML 标签
+    window.copyCardText = function(btn) {
+        const card = btn.closest('.note-card');
+        const contentDiv = card.querySelector('.note-content');
+        const text = contentDiv.textContent || contentDiv.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('便签文字已成功复制（已自动过滤排版标签，方便粘贴聊天）！');
+        });
+    }
+
+    window.deleteNote = function(id) {
+        if(confirm('确定要彻底删除这条记录吗？')) {
+            notes = notes.filter(note => note.id !== id);
+            localStorage.setItem('spark_space_v4', JSON.stringify(notes));
+            renderNotes();
+        }
+    }
+
+    renderNotes();
+</script>
+
+</body>
+</html>
